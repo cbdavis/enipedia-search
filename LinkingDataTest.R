@@ -167,8 +167,7 @@ carmav3Data = getAllEntriesInIndex("carmav3")
 ## TODO possible to run multiple queries at once?
 # try to match the euets to the eprtr
 #matchingResults = data.frame()
-#for (i in c(1:nrow(euetsData))){
-for (i in c(7120:nrow(euetsData))){
+for (i in c(1:nrow(euetsData))){
   print(i)
   queryString = paste(euetsData[i,which(!is.na(euetsData[i,]))], collapse=" ")
   queryString = gsub('"', '', queryString)
