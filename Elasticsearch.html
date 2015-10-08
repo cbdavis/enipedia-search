@@ -1,0 +1,552 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Enipedia Search</title>
+
+        <style type="text/css">
+		#map-canvas { height: 400px; width:600px; }
+
+		 table.resultTable
+		{
+		    border-width: 0 0 1px 1px;
+		    border-spacing: 0;
+		    border-collapse: collapse;
+		    border-style: solid;
+		}
+
+		.resultTable td, .resultTable th
+		{
+		    margin: 0;
+		    padding: 4px;
+		    border-width: 1px 1px 0 0;
+		    border-style: solid;
+		}
+	</style>
+
+
+	<script src="jquery-1.11.3.min.js"></script>
+        <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?v=3&sensor=false&libraries=places"></script>
+
+	<script type="text/javascript">
+/**
+TODO 
+* would be great to be able to query multiple indexes simultaneous and return the best results from each
+* need to have different ways to format the results from different data sources
+* Load libraries locally on server
+* standardize various data sources to the extend possible
+* trim/collapse long results in tables - i.e. don't need to show the whole text of the wikipedia article unless the user clicks on it
+* Create permalink so people can reproduce view and settings
+* Any way to get search results indexed by search engines?  This could be interesting for helping to link the data and attract attention
+**/
+ 
+        var map;
+	var markersArray = [];
+        var infowindow = new google.maps.InfoWindow();
+
+	//http://nack.co/get-url-parameters-using-jquery/
+	$.urlParam = function(name){
+		var results = new RegExp('[\\?&]' + name + '=([^&#]*)').exec(window.location.href);
+		if (results) {
+			return results[1];
+		} else {
+			return null;
+		}
+	}
+
+	//initialize the map
+      function initialize() {
+	var query = $.urlParam('q');
+	var mapOptions = {
+          center: new google.maps.LatLng(20,0),
+          zoom: 1,
+	  mapTypeId: google.maps.MapTypeId.ROADMAP
+	};
+	map = new google.maps.Map(document.getElementById("map-canvas"),
+	    mapOptions);
+				
+        if (query){ //only perform initial search if a query string has been found
+		// convert plus to space (charachter encoding w/ urlencode function of wiki)
+                query = query.replace(/\+/g, ' ');
+		// remove extra spaces
+                query = query.replace(/ +(?= )/g,'');
+                $('#searchbox').val(decodeURIComponent(query));
+                search();
+        }
+
+
+      }
+      google.maps.event.addDomListener(window, 'load', initialize);
+
+	// Something to put here?
+	// Run function once document is ready
+	//$( document ).ready(function() {
+	//})
+
+	function clearMarkers() {
+	  for (var i = 0; i < markersArray.length; i++ ) {
+	    markersArray[i].setMap(null);
+	  }
+	  markersArray = [];
+	}
+
+	//Thank you internet http://stackoverflow.com/questions/5717093/check-if-a-javascript-string-is-an-url
+	function ValidUrl(str) {
+	  var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
+	  '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
+	  '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
+	  '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+	  '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
+	  '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
+	  if(!pattern.test(str)) {
+	    return false;
+	  } else {
+	    return true;
+	  }
+	}
+
+	function carmaPrinter(columnNames, columnValues, score, index, objType, objID){
+		var content = "<table class='resultTable'><tr>";
+		content += "<th>Score</th>";
+		content += "<th>Source</th>";
+		var idLoc=0;
+		for (i=0; i < columnNames.length; i++) {
+			if (columnNames[i] == "plant_id"){
+				idLoc = i;
+			}
+			content += "<th>";
+			content += columnNames[i];
+			content += "</th>";		
+		}
+		content += "</tr><tr>";
+		content += "<td valign='top'>" + score + "</td>";
+		content += "<td valign='top'>" + index + "</td>";
+		for (i=0; i < columnValues.length; i++) {
+				if (i == idLoc){
+					content += "<td valign='top'>";
+					content += "<a href=\"http://carma.org/plant/detail/" + columnValues[i] + "\">" + columnValues[i] + "</a>";
+					content += "</td>";						
+				} else {
+					content += "<td valign='top'>";
+					content += formatTableData(columnValues[i]);
+					content += "</td>";						
+				}
+		}
+		content += "</tr></table><p>";
+		return content;
+	}
+
+
+	function openStreetMapPrinter(columnNames, columnValues, score, index, objType, objID){
+		var content = "<table class='resultTable'><tr>";
+		content += "<th>Score</th>";
+		content += "<th>Source</th>";
+		content += "<th>ID</th>";
+		for (i=0; i < columnNames.length; i++) {
+			content += "<th>";
+			content += columnNames[i];
+			content += "</th>";		
+		}
+		content += "</tr><tr>";
+		content += "<td valign='top'>" + score + "</td>";
+		content += "<td valign='top'>OpenStreetMap</td>";
+		content += "<td valign='top'><a href=\"http://www.openstreetmap.org/browse/" + objType + "/" + objID + "\">" + objType + "/" + objID + "</a></td>";
+		for (i=0; i < columnValues.length; i++) {
+				content += "<td valign='top'>";
+				content += formatTableData(columnValues[i]);
+				content += "</td>";						
+		}
+		content += "</tr></table><p>";
+		return content;
+
+	}
+
+	function industryAboutEntryPrinter(columnNames, columnValues, score, index, objType, objID){
+		// put url link into name
+
+		var content = "<table class='resultTable'><tr>";
+		content += "<th>Score</th>";
+		content += "<th>Source</th>";
+		var nameLoc;
+		var urlLoc;
+		for (i=0; i < columnNames.length; i++) {
+			if (columnNames[i] == "name"){
+				nameLoc = i;
+			}
+			if (columnNames[i] == "url"){
+				urlLoc = i;
+			} else { //only create table header element if this is not the url
+				content += "<th>";
+				content += columnNames[i];
+				content += "</th>";		
+			}
+		}
+		content += "</tr><tr>";
+		content += "<td valign='top'>" + score + "</td>";
+		content += "<td valign='top'>IndustryAbout</td>";
+		for (i=0; i < columnValues.length; i++) {
+			if (i == nameLoc){
+				content += "<td valign='top'>";
+				content += "<a href=\"" + columnValues[urlLoc] + "\">" + columnValues[i] + "</a>";
+				content += "</td>";						
+			} else if (i != urlLoc){
+				content += "<td valign='top'>";
+				content += formatTableData(columnValues[i]);
+				content += "</td>";						
+			}
+		}
+		content += "</tr></table><p>";
+		return content;
+	}
+
+	function defaultEntryPrinter(columnNames, columnValues, score, index, objType, objID){
+		var content = "<table class='resultTable'><tr>";
+		content += "<th>Score</th>";
+		content += "<th>Source</th>";
+		content += "<th>ID</th>";
+		for (i=0; i < columnNames.length; i++) {
+			content += "<th>";
+			content += columnNames[i];
+			content += "</th>";		
+		}
+		content += "</tr><tr>";
+		content += "<td valign='top'>" + score + "</td>";
+		content += "<td valign='top'>" + index + "</td>";
+		content += "<td valign='top'>" + objID + "</td>";
+		for (i=0; i < columnValues.length; i++) {
+			content += "<td valign='top'>";
+			content += formatTableData(columnValues[i]);
+			content += "</td>";						
+		}
+		content += "</tr></table><p>";
+		return content;
+	}
+
+	//Basically see if there is a URL and create a link to it
+	function formatTableData(text){
+		var content = "";
+		if (ValidUrl(text)){
+			content += "<a href=\"" + text + "\">" + text + "</a>";
+		} else {
+			content += text;
+		}
+		return content;
+	}
+
+	function search(){
+
+		$('#search_status').empty();		
+		$('#search_status').append("Searching... <img src=loading.gif>");
+
+		//remove previous markers
+		clearMarkers();
+		var query = $('#searchbox').val();
+		var numResults = $('#numSearchResults').val();
+		var indicesToCheck = ["wikipedia", "carmav2", "carmav3", "osm", "industryabout", "geo", "eprtr", "euets", "lcpd"];
+		var indicesToSearch = [];
+		for (index in indicesToCheck){
+			if ($('#'+indicesToCheck[index]).prop('checked')){
+				indicesToSearch.push(indicesToCheck[index]);
+			}
+		}
+		var queryURL = "http://enipedia.tudelft.nl/search/" + indicesToSearch.join(",") + "/_search"
+
+		if (typeof map.getBounds() === 'undefined') {
+		        var lat1 = 90;
+		        var lon1 = 180;
+		        var lat2 = -90;
+		        var lon2 = -180;
+		} else {
+		        var lat1 = map.getBounds().getNorthEast().lat();
+		        var lon1 = map.getBounds().getNorthEast().lng();
+		        var lat2 = map.getBounds().getSouthWest().lat();
+		        var lon2 = map.getBounds().getSouthWest().lng();
+		}
+		//search doesn't work if +/- 180 is included
+		if (lon2 == -180){
+			lon2 = -179.999;
+		}
+		if (lon1 == 180){
+			lon1 = 179.999;
+		}
+
+		var topLeft = lat1+","+lon2;
+		var bottomRight = lat2+","+lon1;
+
+		var queryData = {};
+		queryData.from = 0;
+		queryData.size = numResults;
+
+		if (query != ""){
+			// let there be fuzzyness
+			if ($('#fuzzyLikeThis').prop('checked')){
+				queryData.query = {
+							fuzzy_like_this: {
+							    like_text: query
+							}
+						};
+			} else { // just do normal search, it's quicker
+                                queryData.query = {
+                                                    "common" : {
+                                                        "_all" : { "query":query, 
+                                                                   "cutoff_frequency":0.001   
+                                                                 }
+                                                               }
+                                                   };
+			}
+	
+		} else { //match everything if query is blank
+			// set checkbox to true if it isn't already, otherwise the whole world will be shown
+			$('#searchInMapView').prop('checked', true);
+			queryData.query = {
+					    "filtered": {
+					      "query": {
+						"match_all": {
+						}
+					   }
+					  }
+					};
+		}
+
+
+		if ($('#searchInMapView').prop('checked')){
+		  queryData.filter = { 
+					"geo_bounding_box": {
+					  "location": {
+					    "top_left": topLeft,
+					    "bottom_right": bottomRight
+					  }
+					}};
+		}
+
+		// See what I've created
+		//alert(JSON.stringify(queryData));
+
+		$.ajax({
+			type: "POST",
+			url: queryURL,
+                        data: JSON.stringify(queryData),
+			//jsonp doesn't work
+			dataType: "json",
+			crossDomain: true,
+			success: function( data ) {
+
+				var totalHits = data.hits.total;
+				var hitsReturned = numResults;
+				// check if the amount of hits returned is less than the number of results requested
+				if (hitsReturned > totalHits){
+					hitsReturned = totalHits
+				}
+
+				$('#search_status').empty();		
+				$('#search_status').append(hitsReturned + " of " + totalHits + " hits returned in " + parseFloat(data.took)/1000 + " seconds");
+
+				var bounds = new google.maps.LatLngBounds();
+				var hits = data.hits.hits;
+
+				// clear the previous table
+				$('#table_goes_here').empty();
+
+				// get the min and max score so that the icons can be sized 
+				// based on a standard range from min to max
+				var minScore = 9999;
+				var maxScore = -9999;
+				for (resultNum=0; resultNum < hits.length; resultNum++) {				
+					var score = hits[resultNum]._score;
+					if (score > maxScore) {
+						maxScore = score;
+					}
+					if (score < minScore) {
+						minScore = score;
+					}
+				}
+				for (resultNum=0; resultNum < hits.length; resultNum++) {				
+					var index = hits[resultNum]._index;
+					var objID = hits[resultNum]._id;
+					var objType = hits[resultNum]._type;
+		
+					//console.debug ("%o", hits[resultNum]);
+
+					var columnNames = $.map(hits[resultNum]._source, function(value, key) {
+					  return key;
+					});
+
+					var columnValues = $.map(hits[resultNum]._source, function(value, key) {
+					  return value;
+					});
+
+					var score = hits[resultNum]._score;
+					var content = "";
+
+					var lat = 0;
+					var lon = 0;
+					
+					if (hits[resultNum]._source.latitude){
+						lat = hits[resultNum]._source.latitude;
+					}
+					if (hits[resultNum]._source.lat){
+						lat = hits[resultNum]._source.lat;
+					}
+
+					if (hits[resultNum]._source.longitude){
+						lon = hits[resultNum]._source.longitude;
+					}
+					if (hits[resultNum]._source.lon){
+						lon = hits[resultNum]._source.lon;
+					}
+					if (hits[resultNum]._source.long){
+						lon = hits[resultNum]._source.long;
+					}
+
+					if(lat !=0.0 && lon != 0.0){
+						var myLatLng = new google.maps.LatLng(lat,lon);
+						if (minScore != maxScore){
+							scoreScalingFactor = 0.5 + ((score-minScore)/(maxScore - minScore));
+						} else {
+							scoreScalingFactor = 1
+						}
+
+						var markerImage = new google.maps.MarkerImage(
+						    "http://maps.google.com/mapfiles/marker.png",
+						    null, /* size is determined at runtime */
+						    null, /* origin is 0,0 */
+						    null, /* anchor is bottom center of the scaled image */
+						    new google.maps.Size(20*scoreScalingFactor, 34*scoreScalingFactor)
+						); 
+
+						
+
+						var markerOptions = {position: myLatLng, map:map, title:"hello", icon: markerImage};
+						var marker = new google.maps.Marker(markerOptions);
+						marker.data = hits[resultNum]._source;
+						marker.setMap(map);
+				                google.maps.event.addListener(marker, 'click', function() { open_marker_info(this)} );
+				                markersArray.push(marker);
+						bounds.extend(myLatLng);
+					}
+					//TODO this needs to be customized based on the index that is being worked with
+					
+					// could specify which columns need to be formatted differently - i.e. what's a link.					
+					// probably want to put the link on the name if it exists, maybe reorder fields based
+					// on popularity/usefulness
+					switch(index)
+					{
+						case "carmav2":
+							content = carmaPrinter(columnNames, columnValues, score, index, objType, objID);
+							break;
+						case "carmav3":
+							content = carmaPrinter(columnNames, columnValues, score, index, objType, objID);
+							break;
+						case "osm":
+							content = openStreetMapPrinter(columnNames, columnValues, score, index, objType, objID);
+							break;
+						case "industryabout":
+							content = industryAboutEntryPrinter(columnNames, columnValues, score, index, objType, objID);
+							break;
+						default:
+							content = defaultEntryPrinter(columnNames, columnValues, score, index, objType, objID);
+					}
+
+
+					$('#table_goes_here').append(content);
+				}
+				if (hits.length > 0){ //don't update map if we didn't find anything
+					map.fitBounds(bounds);
+				}
+
+				// set minimum zoom level - usually needed for if only a single point is returned
+				// http://stackoverflow.com/questions/2437683/google-maps-api-v3-can-i-setzoom-after-fitbounds
+				var listener = google.maps.event.addListener(map, "idle", function() { 
+				  if (map.getZoom() > 15) map.setZoom(15); 
+				  google.maps.event.removeListener(listener); 
+				});
+	                }
+  		});
+	}
+
+	function open_marker_info(marker){
+		var content = "";
+		//var content = "<div style='font-size: 9pt; font-family: Arial'><span style='font-size: 12pt'>" + marker.data.name.value + "</span><ul>";
+		if(marker.data["name"]){
+			content = "<div style='font-size: 9pt; font-family: Arial'><span style='font-size: 12pt'>" + marker.data["name"] + "</span><ul>";
+		} else {
+			content = "<div style='font-size: 9pt; font-family: Arial'><ul>";
+		}
+
+		for (var p in marker.data) {
+			//if (p != "wiki" && p != "name" && p != "point" && marker.data[p].value != null && !(p == "ownerenc" && marker.data.owner))
+			content += "<li>" + p.replace("_"," ") + ": " + marker.data[p] + "</li>";
+		}
+		//marker.data.wiki.value = marker.data.wiki.value.replace("'", "%27");
+		//content += "</ul><a href='http://enipedia.tudelft.nl/wiki/" + marker.data.wiki.value + "' target='EnipView'>view</a> | ";
+		//content += "<a href='http://enipedia.tudelft.nl/enipedia/index.php?title=" + marker.data.wiki.value + "&action=formedit' target='EnipEdit'>edit</a> in Enipedia</div>";
+		content += "</ul>";
+		infowindow.setContent(content);
+		infowindow.open(map, marker);
+	}
+
+	function toggleAllDataSources(){
+		if ($("#all_datasource_checkboxes").prop('checked')){
+			//make everything else checked also
+			$("#wikipedia").prop('checked', true);
+			$("#carmav2").prop('checked', true);
+			$("#carmav3").prop('checked', true);
+			$("#osm").prop('checked', true);
+                        $("#geo").prop('checked', true);
+                        $("#industryabout").prop('checked', true);
+		} else { // uncheck everything
+                        //make everything else checked also
+                        $("#wikipedia").prop('checked', false);
+                        $("#carmav2").prop('checked', false);
+                        $("#carmav3").prop('checked', false);
+                        $("#osm").prop('checked', false);
+                        $("#geo").prop('checked', false);
+                        $("#industryabout").prop('checked', false);
+		}
+	}
+
+	//if press enter, then pretend to press the search button
+	//otherwise the page just refreshes and nothing is returned
+	$("#searchbox").keyup(function(event){
+		alert('hi');
+    		if(event.keyCode == 13){
+		        $("#searchbutton").click();
+		    }
+	});
+
+  </script>
+ 
+</head>
+<body>
+<table><tr><td>
+<input id="searchbox" type=text size=30 onkeydown="if (event.keyCode == 13) {search();}"/>
+<input id="searchbutton" type="button" value="search" onclick="search();"/>
+Number of Results:<select id="numSearchResults">
+<option value="10">10</option>
+<option value="50">50</option>
+<option value="100">100</option>
+<option value="500">500</option>
+</select>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Search within Map View<input type=checkbox id="searchInMapView"/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fuzzy Search<input type=checkbox id="fuzzyLikeThis"/>
+<br><b><i>Further documentation and development notes can be found <a href="http://enipedia.tudelft.nl/wiki/Elasticsearch_on_Enipedia">here</a>.</i></b>
+</td></tr>
+<tr><td><!-- probably would want to generate these automatically, especially when more sources are added -->
+<!--<input type=checkbox id="all_datasource_checkboxes" checked onclick="toggleAllDataSources()"/>All &nbsp;&nbsp;&nbsp;&nbsp;-->
+<!-- TODO Toggle All checkbox off if any of these below is turned off.  Able to use wildcard when selecing? -->
+<input type=checkbox id="wikipedia" checked onclick="search()"/>Wikipedia &nbsp;&nbsp;&nbsp;&nbsp;
+<input type=checkbox id="carmav2" onclick="search()"/>CARMA v2 &nbsp;&nbsp;&nbsp;&nbsp;
+<input type=checkbox id="carmav3" onclick="search()"/>CARMA v3 &nbsp;&nbsp;&nbsp;&nbsp;
+<input type=checkbox id="osm" checked onclick="search()"/>OpenStreetMap &nbsp;&nbsp;&nbsp;&nbsp;
+<input type=checkbox id="industryabout" checked onclick="search()"/>IndustryAbout &nbsp;&nbsp;&nbsp;&nbsp;
+<input type=checkbox id="euets" checked onclick="search()"/>EU ETS &nbsp;&nbsp;&nbsp;&nbsp;
+<input type=checkbox id="eprtr" checked onclick="search()"/>E-PRTR &nbsp;&nbsp;&nbsp;&nbsp;
+<input type=checkbox id="lcpd" checked onclick="search()"/>LCPD &nbsp;&nbsp;&nbsp;&nbsp;
+<!--<input type=checkbox id="geo" checked onclick="search()"/>GlobalEnergyObservatory &nbsp;&nbsp;&nbsp;&nbsp;-->
+</td></tr></table>
+<div id="map-canvas"></div>
+<div id="search_status"></div>
+<div id="table_goes_here"></div>
+ 
+</body>
+</html>
+
