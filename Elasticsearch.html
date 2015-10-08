@@ -4,7 +4,14 @@
   <title>Enipedia Search</title>
 
         <style type="text/css">
-		#map-canvas { height: 400px; width:600px; }
+		#map-canvas { height: 400px; width:800px; }
+
+		* {
+		    font-family: Tahoma, Geneva, sans-serif;
+		    font-size:14px;
+		} 
+
+
 
 		 table.resultTable
 		{
@@ -213,9 +220,32 @@ TODO
 		content += "<td valign='top'>" + index + "</td>";
 		content += "<td valign='top'>" + objID + "</td>";
 		for (i=0; i < columnValues.length; i++) {
-			content += "<td valign='top'>";
-			content += formatTableData(columnValues[i]);
-			content += "</td>";						
+
+			/**
+				check if the text is too long (i.e. raw wikipedia text)
+				and if we should truncate the text with an option to expand it.
+			**/
+			if (columnValues[i].length > 300){
+				content += "<td valign='top'>";
+
+				content += formatTableData(columnValues[i].substring(1, 300));
+				content += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+				content += "<a name='expandText'><font color=blue>(expand text)</font></a>";
+
+				content += "<div class='extraText'>";
+				content += formatTableData(columnValues[i].substring(301));
+				content += "</div>";
+				//content += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+				//content += "<font color=blue>(collapse text)</font>";
+
+				content += "</td>";						
+			} else {
+				content += "<td valign='top'>";
+				content += formatTableData(columnValues[i]);
+				content += "</td>";						
+			}
+			
+
 		}
 		content += "</tr></table><p>";
 		return content;
@@ -517,7 +547,11 @@ TODO
  
 </head>
 <body>
-<table><tr><td>
+<table width=800><tr><td>
+Here you can search across multiple datasets for information about power plants. Further documentation and development notes can be found <a href="http://enipedia.tudelft.nl/wiki/Elasticsearch_on_Enipedia">here</a>.</td></tr></table>
+<table>
+<tr><td><hr></td></tr>
+<tr><td>
 <input id="searchbox" type=text size=30 onkeydown="if (event.keyCode == 13) {search();}"/>
 <input id="searchbutton" type="button" value="search" onclick="search();"/>
 Number of Results:<select id="numSearchResults">
@@ -526,23 +560,26 @@ Number of Results:<select id="numSearchResults">
 <option value="100">100</option>
 <option value="500">500</option>
 </select>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Search within Map View<input type=checkbox id="searchInMapView"/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fuzzy Search<input type=checkbox id="fuzzyLikeThis"/>
-<br><b><i>Further documentation and development notes can be found <a href="http://enipedia.tudelft.nl/wiki/Elasticsearch_on_Enipedia">here</a>.</i></b>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Search within current map view<input type=checkbox id="searchInMapView"/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fuzzy search<input type=checkbox id="fuzzyLikeThis"/>
+<br>
 </td></tr>
+<tr><td>Data sets to search:</td></tr>
 <tr><td><!-- probably would want to generate these automatically, especially when more sources are added -->
 <!--<input type=checkbox id="all_datasource_checkboxes" checked onclick="toggleAllDataSources()"/>All &nbsp;&nbsp;&nbsp;&nbsp;-->
 <!-- TODO Toggle All checkbox off if any of these below is turned off.  Able to use wildcard when selecing? -->
-<input type=checkbox id="wikipedia" checked onclick="search()"/>Wikipedia &nbsp;&nbsp;&nbsp;&nbsp;
+<input type=checkbox id="wikipedia" checked/>Wikipedia &nbsp;&nbsp;&nbsp;&nbsp;
 <input type=checkbox id="carmav2" onclick="search()"/>CARMA v2 &nbsp;&nbsp;&nbsp;&nbsp;
 <input type=checkbox id="carmav3" onclick="search()"/>CARMA v3 &nbsp;&nbsp;&nbsp;&nbsp;
-<input type=checkbox id="osm" checked onclick="search()"/>OpenStreetMap &nbsp;&nbsp;&nbsp;&nbsp;
-<input type=checkbox id="industryabout" checked onclick="search()"/>IndustryAbout &nbsp;&nbsp;&nbsp;&nbsp;
-<input type=checkbox id="euets" checked onclick="search()"/>EU ETS &nbsp;&nbsp;&nbsp;&nbsp;
-<input type=checkbox id="eprtr" checked onclick="search()"/>E-PRTR &nbsp;&nbsp;&nbsp;&nbsp;
-<input type=checkbox id="lcpd" checked onclick="search()"/>LCPD &nbsp;&nbsp;&nbsp;&nbsp;
-<!--<input type=checkbox id="geo" checked onclick="search()"/>GlobalEnergyObservatory &nbsp;&nbsp;&nbsp;&nbsp;-->
-</td></tr></table>
+<input type=checkbox id="osm" checked/>OpenStreetMap &nbsp;&nbsp;&nbsp;&nbsp;
+<input type=checkbox id="industryabout" checked/>IndustryAbout &nbsp;&nbsp;&nbsp;&nbsp;
+<input type=checkbox id="euets" checked/>EU ETS &nbsp;&nbsp;&nbsp;&nbsp;
+<input type=checkbox id="eprtr" checked/>E-PRTR &nbsp;&nbsp;&nbsp;&nbsp;
+<input type=checkbox id="lcpd" checked/>LCPD &nbsp;&nbsp;&nbsp;&nbsp;
+<!--<input type=checkbox id="geo" checked/>GlobalEnergyObservatory &nbsp;&nbsp;&nbsp;&nbsp;-->
+</td></tr>
+<tr><td><hr></td></tr>
+</table>
 <div id="map-canvas"></div>
 <div id="search_status"></div>
 <div id="table_goes_here"></div>
