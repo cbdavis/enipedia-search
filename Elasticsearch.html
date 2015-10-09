@@ -60,6 +60,16 @@ TODO
 		}
 	}
 
+	function expandText(textID) {
+		document.getElementById("shortText_" + textID).style.display = 'none';
+		document.getElementById("fullText_" + textID).style.display = 'block';
+	}
+
+	function collapseText(textID) {
+		document.getElementById("shortText_" + textID).style.display = 'block';
+		document.getElementById("fullText_" + textID).style.display = 'none';
+	}
+
 	//initialize the map
       function initialize() {
 	var query = $.urlParam('q');
@@ -228,15 +238,29 @@ TODO
 			if (columnValues[i].length > 300){
 				content += "<td valign='top'>";
 
-				content += formatTableData(columnValues[i].substring(1, 300));
-				content += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-				content += "<a name='expandText'><font color=blue>(expand text)</font></a>";
+				// make a unique id so we know what we're clicking on and collapsing/expanding
+				textID = index + objID; 
+				textID = textID.replace(/\W/g, '');
 
-				content += "<div class='extraText'>";
-				content += formatTableData(columnValues[i].substring(301));
+				// want div of short text and full text
+
+				// ===== Short Text =====				
+				content += "<div id='shortText_" + textID + "'>";
+				content += formatTableData(columnValues[i].substring(0, 299));
+
+				content += "<div id='expandText_" + textID + "' onClick=expandText('" + textID + "')>"
+				content += "<font color=blue>...(expand text)</font></div>";
+
 				content += "</div>";
-				//content += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-				//content += "<font color=blue>(collapse text)</font>";
+
+				// ===== Long Text =====				
+				content += "<div id='fullText_" + textID + "' style='display:none'>";
+				content += formatTableData(columnValues[i]);
+				content += "<div id='collapseText_" + textID + "' onClick=collapseText('" + textID + "')>"
+				content += "<font color=blue>(collapse text)</font></div>";
+				content += "</div>";
+
+
 
 				content += "</td>";						
 			} else {
@@ -514,25 +538,31 @@ TODO
 		infowindow.open(map, marker);
 	}
 
-	function toggleAllDataSources(){
-		if ($("#all_datasource_checkboxes").prop('checked')){
-			//make everything else checked also
-			$("#wikipedia").prop('checked', true);
-			$("#carmav2").prop('checked', true);
-			$("#carmav3").prop('checked', true);
-			$("#osm").prop('checked', true);
-                        $("#geo").prop('checked', true);
-                        $("#industryabout").prop('checked', true);
-		} else { // uncheck everything
-                        //make everything else checked also
+
+	function clearAllDataSetSelections(){
                         $("#wikipedia").prop('checked', false);
                         $("#carmav2").prop('checked', false);
                         $("#carmav3").prop('checked', false);
                         $("#osm").prop('checked', false);
                         $("#geo").prop('checked', false);
                         $("#industryabout").prop('checked', false);
-		}
+                        $("#euets").prop('checked', false);
+                        $("#eprtr").prop('checked', false);
+                        $("#lcpd").prop('checked', false);
 	}
+
+	function selectAllDataSets(){
+                        $("#wikipedia").prop('checked', true);
+                        $("#carmav2").prop('checked', true);
+                        $("#carmav3").prop('checked', true);
+                        $("#osm").prop('checked', true);
+                        $("#geo").prop('checked', true);
+                        $("#industryabout").prop('checked', true);
+                        $("#euets").prop('checked', true);
+                        $("#eprtr").prop('checked', true);
+                        $("#lcpd").prop('checked', true);
+	}
+
 
 	//if press enter, then pretend to press the search button
 	//otherwise the page just refreshes and nothing is returned
@@ -547,11 +577,17 @@ TODO
  
 </head>
 <body>
+<!-- This table needed to wrap text -->
 <table width=800><tr><td>
-Here you can search across multiple datasets for information about power plants. Further documentation and development notes can be found <a href="http://enipedia.tudelft.nl/wiki/Elasticsearch_on_Enipedia">here</a>.</td></tr></table>
+Here you can search across multiple datasets for information about power plants. <br>
+Further documentation and development notes can be found <a href="http://enipedia.tudelft.nl/wiki/Elasticsearch_on_Enipedia">here</a>.
+</td></tr></table>
+
 <table>
-<tr><td><hr></td></tr>
-<tr><td>
+<tr>
+<td colspan=2><hr></td>
+</tr>
+<tr><td colspan=2>
 <input id="searchbox" type=text size=30 onkeydown="if (event.keyCode == 13) {search();}"/>
 <input id="searchbutton" type="button" value="search" onclick="search();"/>
 Number of Results:<select id="numSearchResults">
@@ -563,24 +599,27 @@ Number of Results:<select id="numSearchResults">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Search within current map view<input type=checkbox id="searchInMapView"/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fuzzy search<input type=checkbox id="fuzzyLikeThis"/>
 <br>
-</td></tr>
-<tr><td>Data sets to search:</td></tr>
-<tr><td><!-- probably would want to generate these automatically, especially when more sources are added -->
-<!--<input type=checkbox id="all_datasource_checkboxes" checked onclick="toggleAllDataSources()"/>All &nbsp;&nbsp;&nbsp;&nbsp;-->
-<!-- TODO Toggle All checkbox off if any of these below is turned off.  Able to use wildcard when selecing? -->
-<input type=checkbox id="wikipedia" checked/>Wikipedia &nbsp;&nbsp;&nbsp;&nbsp;
-<input type=checkbox id="carmav2" onclick="search()"/>CARMA v2 &nbsp;&nbsp;&nbsp;&nbsp;
-<input type=checkbox id="carmav3" onclick="search()"/>CARMA v3 &nbsp;&nbsp;&nbsp;&nbsp;
-<input type=checkbox id="osm" checked/>OpenStreetMap &nbsp;&nbsp;&nbsp;&nbsp;
-<input type=checkbox id="industryabout" checked/>IndustryAbout &nbsp;&nbsp;&nbsp;&nbsp;
-<input type=checkbox id="euets" checked/>EU ETS &nbsp;&nbsp;&nbsp;&nbsp;
-<input type=checkbox id="eprtr" checked/>E-PRTR &nbsp;&nbsp;&nbsp;&nbsp;
-<input type=checkbox id="lcpd" checked/>LCPD &nbsp;&nbsp;&nbsp;&nbsp;
-<!--<input type=checkbox id="geo" checked/>GlobalEnergyObservatory &nbsp;&nbsp;&nbsp;&nbsp;-->
-</td></tr>
-<tr><td><hr></td></tr>
+</td>
+</tr>
+<tr>
+<td><div id="map-canvas"></div></td>
+<td valign="top">
+Data sets to search:<br>
+<input type=checkbox id="wikipedia" checked/>Wikipedia <br>
+<input type=checkbox id="carmav2" onclick="search()"/>CARMA v2 <br>
+<input type=checkbox id="carmav3" onclick="search()"/>CARMA v3 <br>
+<input type=checkbox id="osm" checked/>OpenStreetMap <br>
+<input type=checkbox id="industryabout" checked/>IndustryAbout <br>
+<input type=checkbox id="euets" checked/>EU ETS <br>
+<input type=checkbox id="eprtr" checked/>E-PRTR <br>
+<input type=checkbox id="lcpd" checked/>LCPD <br>
+<p>
+Select: 
+<a onclick="selectAllDataSets()"><font color="blue">All</font></a>, <a onclick="clearAllDataSetSelections()"><font color="blue">None</font></a>
+</td>
+</tr>
 </table>
-<div id="map-canvas"></div>
+
 <div id="search_status"></div>
 <div id="table_goes_here"></div>
  
