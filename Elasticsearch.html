@@ -111,7 +111,7 @@ TODO
 	  var pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
 	  '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
 	  '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
-	  '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // port and path
+	  '(\\:\\d+)?(\\/[-a-z\'\\d%_.~+]*)*'+ // port and path
 	  '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
 	  '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
 	  if(!pattern.test(str)) {
@@ -295,7 +295,7 @@ TODO
 		clearMarkers();
 		var query = $('#searchbox').val();
 		var numResults = $('#numSearchResults').val();
-		var indicesToCheck = ["wikipedia", "carmav2", "carmav3", "osm", "industryabout", "geo", "eprtr", "euets", "lcpd"];
+		var indicesToCheck = ["wikipedia", "carmav2", "carmav3", "osm", "geo", "eprtr", "euets", "lcpd"];
 		var indicesToSearch = [];
 		for (index in indicesToCheck){
 			if ($('#'+indicesToCheck[index]).prop('checked')){
@@ -545,7 +545,7 @@ TODO
                         $("#carmav3").prop('checked', false);
                         $("#osm").prop('checked', false);
                         $("#geo").prop('checked', false);
-                        $("#industryabout").prop('checked', false);
+                        //$("#industryabout").prop('checked', false);
                         $("#euets").prop('checked', false);
                         $("#eprtr").prop('checked', false);
                         $("#lcpd").prop('checked', false);
@@ -557,7 +557,7 @@ TODO
                         $("#carmav3").prop('checked', true);
                         $("#osm").prop('checked', true);
                         $("#geo").prop('checked', true);
-                        $("#industryabout").prop('checked', true);
+                        //$("#industryabout").prop('checked', true);
                         $("#euets").prop('checked', true);
                         $("#eprtr").prop('checked', true);
                         $("#lcpd").prop('checked', true);
@@ -609,7 +609,7 @@ Data sets to search:<br>
 <input type=checkbox id="carmav2" onclick="search()"/>CARMA v2 <br>
 <input type=checkbox id="carmav3" onclick="search()"/>CARMA v3 <br>
 <input type=checkbox id="osm" checked/>OpenStreetMap <br>
-<input type=checkbox id="industryabout" checked/>IndustryAbout <br>
+<!--<input type=checkbox id="industryabout" checked/>IndustryAbout <br>-->
 <input type=checkbox id="euets" checked/>EU ETS <br>
 <input type=checkbox id="eprtr" checked/>E-PRTR <br>
 <input type=checkbox id="lcpd" checked/>LCPD <br>
@@ -625,4 +625,5 @@ Select:
  
 </body>
 </html>
+
 

@@ -181,7 +181,117 @@ for (i in c(1:nrow(euetsData))){
   matchingResults = rbind.fill(matchingResults, df)
 }
 
-topResults = sqldf("select euetsID, max(score) as maxScore from matchingResults group by euetsID")
+library(SPARQL)
+
+queryString = "select * where {
+?x rdf:type cat:Powerplant . 
+FILTER NOT EXISTS {?x prop:Wikipedia_page ?wikipedia } .
+?x prop:Annual_Energyoutput_MWh ?out . 
+OPTIONAL {?x prop:Ownercompany ?owner } . 
+OPTIONAL {?x prop:State ?state } . 
+OPTIONAL {?x prop:City ?city } . 
+} order by DESC(?out) limit 1000"
+
+endpoint = "http://enipedia.tudelft.nl/sparql"
+queryResults = SPARQL(url=endpoint, query=queryString, format='csv', extra=list(format='text/csv'))
+df = queryResults$results
+
+df$out = NULL
+df$name = gsub("_", " ", gsub("http://enipedia.tudelft.nl/wiki/", "", df$x))
+df$city = gsub("_", " ", gsub("http://enipedia.tudelft.nl/wiki/", "", df$city))
+df$state = gsub("_", " ", gsub("http://enipedia.tudelft.nl/wiki/", "", df$state))
+df$owner = gsub("_", " ", gsub("http://enipedia.tudelft.nl/wiki/", "", df$owner))
+
+df$text = paste(df$name, df$city, df$state, df$owner)
+
+###################################################
+# top enipedia entries without wikipedia links
+matchingResults = data.frame()
+for (i in c(1:nrow(df))){
+  print(i)
+  queryString = df$text[i]
+  fuzzy_df = fuzzyLikeThisQuery(queryString, "wikipedia")
+  common_terms_df = commonTermsQuery(queryString, "wikipedia")
+  temp_df = rbind.fill(fuzzy_df, common_terms_df)
+  temp_df = sqldf("select * from temp_df order by score DESC")
+  # get rid of duplicated entries
+  temp_df = temp_df[!duplicated(temp_df$id),]
+  temp_df$euetsID = df$x[i]
+  matchingResults = rbind.fill(matchingResults, temp_df)
+}
+
+locs = which(grepl("WikipediaTableRow", matchingResults$id) == FALSE)
+matchingResults = matchingResults[locs,]
+locs = which(matchingResults$score >= 1)
+matchingResults = matchingResults[locs,]
+
+tmp = matchingResults[,c("id", "euetsID")]
+##################################################
+
+queryString = "select * where {
+?x rdf:type cat:Powerplant . 
+FILTER NOT EXISTS {?x prop:OpenStreetMap_link ?osm } .
+?x prop:Annual_Energyoutput_MWh ?out . 
+OPTIONAL {?x prop:Ownercompany ?owner } . 
+OPTIONAL {?x prop:State ?state } . 
+OPTIONAL {?x prop:City ?city } . 
+} order by DESC(?out) limit 1000"
+
+endpoint = "http://enipedia.tudelft.nl/sparql"
+queryResults = SPARQL(url=endpoint, query=queryString, format='csv', extra=list(format='text/csv'))
+df = queryResults$results
+
+df$out = NULL
+df$name = gsub("_", " ", gsub("http://enipedia.tudelft.nl/wiki/", "", df$x))
+df$city = gsub("_", " ", gsub("http://enipedia.tudelft.nl/wiki/", "", df$city))
+df$state = gsub("_", " ", gsub("http://enipedia.tudelft.nl/wiki/", "", df$state))
+df$owner = gsub("_", " ", gsub("http://enipedia.tudelft.nl/wiki/", "", df$owner))
+df$text = paste(df$name, df$city, df$state, df$owner)
+
+# top enipedia entries without OSM links
+matchingResults = data.frame()
+for (i in c(429:nrow(df))){
+  print(i)
+  queryString = df$text[i]
+  fuzzy_df = fuzzyLikeThisQuery(queryString, "osm")
+  common_terms_df = commonTermsQuery(queryString, "osm")
+  temp_df = rbind.fill(fuzzy_df, common_terms_df)
+  temp_df = sqldf("select * from temp_df order by score DESC")
+  # get rid of duplicated entries
+  temp_df = temp_df[!duplicated(temp_df$id),]
+  temp_df$euetsID = df$x[i]
+  matchingResults = rbind.fill(matchingResults, temp_df)
+}
+
+locs = which(matchingResults$score >= 2)
+matchingResults = matchingResults[locs,]
+plot(sort(matchingResults$score))
+tmp = matchingResults[,c("id", "euetsID")]
+
+
+
+
+
+# get all results above two
+okScores = sqldf("select * from matchingResults where score >= 2")
+
+topResults = sqldf("select source_facilityID, euetsID, max(score) as maxScore from matchingResults group by euetsID")
+
+okScores = cbind(okScores$source_facilityID, 
+      okScores$euetsID, 
+      okScores$score)
+
+# eprtr, euets, score
+colnames(okScores) = c("Source", "Target", "Weight")
+colnames(topResults) = c("Source", "Target", "Weight")
+
+matchedResults = rbind(okScores, topResults)
+matchedResults$Source = gsub("^ +| +$", "", matchedResults$Source)
+
+locs = which(duplicated(matchedResults) == FALSE)
+matchedResults = matchedResults[locs,]
+
+write.csv(matchedResults, "/home/cbdavis/Desktop/matches.csv", row.names=FALSE)
 
 # this is pretty good - most max scores are above one, almost half are above two
 plot(sort(topResults$maxScore))
