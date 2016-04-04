@@ -17,7 +17,7 @@ Behind the scenes, [Elasticsearch](https://www.elastic.co) is used, and you can 
 * `osm` - OpenStreetMap - everything tagged as "[power=generator](http://wiki.openstreetmap.org/wiki/Tag:power%3Dgenerator)", updated daily
 * `wikipedia` - Wikipedia articles about power plants, updated daily via https://github.com/cbdavis/wikipedia-power-plants
 * `geo` - [Global Energy Observatory](globalenergyobservatory.org) via scraper at https://morph.io/coroa/global_energy_observatory_power_plants
-* `lcpd` - [Large Combustion Plant Directive](https://en.wikipedia.org/wiki/Large_Combustion_Plant_Directive)
+* `lcpd` - [Large Combustion Plant Directive](https://en.wikipedia.org/wiki/Large_Combustion_Plant_Directive) - data is old but contains information on heat input, energy per fuel type, etc.
 
 In the examples below, you'll see URLs such as `http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search`, which indicate that the `geo`, `osm`, and `wikipedia` databases are to be searched.  You can add or remove these to search over as few or as many databases as you want.
 
