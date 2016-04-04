@@ -1,8 +1,25 @@
 enipedia-search
 ===============
-This is the web page code that is used for http://enipedia.tudelft.nl/Elasticsearch.html
+
+## What?
+This is the web page code that is used for http://enipedia.tudelft.nl/Elasticsearch.html.  The main motivation is that data for global power plants is not published using a standardized format.  Data that is relevant for a single plant may be distributed across multiple databases which do not (re)use standard identifiers.  The interface below has been created to help deal with this situation by allowing one to easily search across multiple databases that may contain relevant data.  
+
+<a href="http://enipedia.tudelft.nl/Elasticsearch.html"><img src=EnipediaSearch.png></a>
 
 This isn't just for the humans, and you can send API requests as well to http://enipedia.tudelft.nl/search.  
+Behind the scenes, [Elasticsearch](https://www.elastic.co) is used, and you can use their [documentation](https://www.elastic.co/guide/index.html) to help create your own queries.
+
+## Available Databases
+* `carmav2` - Version 2 of the dataset collected by http://carma.org
+* `carmav3` - Version 3 of the dataset collected by http://carma.org
+* `eprtr` - [European Pollutant Release and Transfer Register](http://prtr.ec.europa.eu/#/home)
+* `euets` - European Union Emissions Trading System
+* `osm` - OpenStreetMap - everything tagged as "[power=generator](http://wiki.openstreetmap.org/wiki/Tag:power%3Dgenerator)", updated daily
+* `wikipedia` - Wikipedia articles about power plants, updated daily via https://github.com/cbdavis/wikipedia-power-plants
+* `geo` - [Global Energy Observatory](globalenergyobservatory.org) via scraper at https://morph.io/coroa/global_energy_observatory_power_plants
+* `lcpd` - [Large Combustion Plant Directive](https://en.wikipedia.org/wiki/Large_Combustion_Plant_Directive) - data is old but contains information on heat input, energy per fuel type, etc.
+
+In the examples below, you'll see URLs such as `http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search`, which indicate that the `geo`, `osm`, and `wikipedia` databases are to be searched.  You can add or remove these to search over as few or as many databases as you want.
 
 ## Examples
 
