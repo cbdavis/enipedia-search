@@ -9,6 +9,11 @@ This is the web page code that is used for http://enipedia.tudelft.nl/Elasticsea
 This isn't just for the humans, and you can send API requests as well to http://enipedia.tudelft.nl/search.  
 Behind the scenes, [Elasticsearch](https://www.elastic.co) is used, and you can use their [documentation](https://www.elastic.co/guide/index.html) to help create your own queries.
 
+There are a few interesting types of queries for which examples are included further below in the documentation:
+* **Common Terms Query** - This reduces the importance of commonly occurring terms in suggesting matches.  This is also useful when searching across data in different languages, as it will automatically reduce the importance of terms like "power plant" and "kraftwerk" which may frequently appear in the data.
+* **Fuzzy Like This** - This is useful if you're searching for the name of a power plant that may have different spellings due to translation or the conversion of [diacritical characters to ascii characters](https://docs.oracle.com/cd/E29584_01/webhelp/mdex_basicDev/src/rbdv_chars_mapping.html)
+* **Geographic** - You can search for anything within a geographic bounding box or a distance from a point
+
 ## Available Databases
 * `carmav2` - Version 2 of the dataset collected by http://carma.org
 * `carmav3` - Version 3 of the dataset collected by http://carma.org
