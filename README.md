@@ -109,5 +109,28 @@ curl -H "Content-Type: application/json" -X POST -d '{
 }' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search
 ```
 
-
-
+Search for the Fierza plant within Albania.  Use boost to make sure that Albania is emphasized.
+```
+curl -XPOST 'http://enipedia.tudelft.nl/search/geo/_search?pretty=true' -d '
+{
+  "query": {
+    "bool": {
+      "should": [
+        {
+          "match": {
+            "Name": "Fierza"
+          }
+        }, 
+        {
+          "match": {
+            "Country": {
+              "query": "Albania",
+              "boost": 2
+            }
+          }
+        }
+      ]
+    }
+  }
+}'
+```
