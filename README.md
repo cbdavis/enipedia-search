@@ -26,7 +26,7 @@ There are a few interesting types of queries for which examples are included fur
 
 In the examples below, you'll see URLs such as `http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search`, which indicate that the `geo`, `osm`, and `wikipedia` databases are to be searched.  You can add or remove these to search over as few or as many databases as you want.  Note the addition of `?pretty=true` at the end of the URL which [pretty prints](https://en.wikipedia.org/wiki/Prettyprint) the JSON results to make them easier to read.
 
-## Examples
+## API Call Examples
 
 ### Search for "Maasvlakte" using Common Terms Query
 ```
