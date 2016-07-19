@@ -107,6 +107,47 @@ curl -H "Content-Type: application/json" -X POST -d '{
 }' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
 
+### Search for anything within 10 km of a specific geographic point & sort results by distance
+
+See documentation on [sorting by distance](https://www.elastic.co/guide/en/elasticsearch/guide/current/sorting-by-distance.html) and the note on [scoring by distance](https://www.elastic.co/guide/en/elasticsearch/guide/current/sorting-by-distance.html#scoring-by-distance) (i.e. taking additional features besides distance into account).
+
+```
+curl -H "Content-Type: application/json" -X POST -d '{
+  "from": 0,
+  "size": "10",
+  "query": {
+    "filtered": {
+      "query": {
+        "match_all": {
+        }
+      }
+    }
+  },
+  "filter": {
+        "geo_distance": {
+          "distance": "10km", 
+          "location": { 
+            "lat":  52,
+            "lon": 4
+          }
+        }
+  },
+  "sort": [
+    {
+      "_geo_distance": {
+        "location": { 
+          "lat":  52,
+          "lon": 4
+        },
+        "order":         "asc",
+        "unit":          "km", 
+        "distance_type": "plane" 
+      }
+    }
+  ]
+}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
+```
+
 ### Find something mentioning coal within 10 km of a specific geographic point
 ```
 curl -H "Content-Type: application/json" -X POST -d '{
