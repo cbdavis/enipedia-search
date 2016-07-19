@@ -67,7 +67,6 @@ curl -H "Content-Type: application/json" -X POST -d '{
     "filtered": {
       "query": {
         "match_all": {
-          
         }
       }
     }
@@ -83,6 +82,30 @@ curl -H "Content-Type: application/json" -X POST -d '{
 }' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search
 ```
 
+### Search for anything within 10 km of a specific geographic point
+```
+curl -H "Content-Type: application/json" -X POST -d '{
+  "from": 0,
+  "size": "10",
+  "query": {
+    "filtered": {
+      "query": {
+        "match_all": {
+        }
+      }
+    }
+  },
+  "filter": {
+        "geo_distance": {
+          "distance": "10km", 
+          "location": { 
+            "lat":  52,
+            "lon": 4
+          }
+        }
+  }
+}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search
+```
 
 ### Search for "Maasvlakte" within a geographic bounding box
 
