@@ -24,7 +24,7 @@ There are a few interesting types of queries for which examples are included fur
 * `geo` - [Global Energy Observatory](globalenergyobservatory.org) via scraper at https://morph.io/coroa/global_energy_observatory_power_plants
 * `lcpd` - [Large Combustion Plant Directive](https://en.wikipedia.org/wiki/Large_Combustion_Plant_Directive) - data is old but contains information on heat input, energy per fuel type, etc.
 
-In the examples below, you'll see URLs such as `http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search`, which indicate that the `geo`, `osm`, and `wikipedia` databases are to be searched.  You can add or remove these to search over as few or as many databases as you want.
+In the examples below, you'll see URLs such as `http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search`, which indicate that the `geo`, `osm`, and `wikipedia` databases are to be searched.  You can add or remove these to search over as few or as many databases as you want.  Note the addition of `?pretty=true` at the end of the URL which [pretty prints](https://en.wikipedia.org/wiki/Prettyprint) the JSON results to make them easier to read.
 
 ## Examples
 
@@ -41,7 +41,7 @@ curl -H "Content-Type: application/json" -X POST -d '{
       }
     }
   }
-}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search
+}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
 
 ### Search for "Maasvlakte" using Fuzzy Like This query
@@ -54,7 +54,7 @@ curl -H "Content-Type: application/json" -X POST -d '{
       "like_text": "Maasvlakte"
     }
   }
-}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search
+}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
 
 ### Search for anything within a geographic bounding box
@@ -79,7 +79,7 @@ curl -H "Content-Type: application/json" -X POST -d '{
       }
     }
   }
-}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search
+}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
 
 ### Search for anything within 10 km of a specific geographic point
@@ -104,8 +104,34 @@ curl -H "Content-Type: application/json" -X POST -d '{
           }
         }
   }
-}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search
+}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
+
+### Find something mentioning coal within 10 km of a specific geographic point
+```
+curl -H "Content-Type: application/json" -X POST -d '{
+  "from": 0,
+  "size": "10",
+  "query": {
+    "common": {
+      "_all": {
+        "query": "Coal",
+        "cutoff_frequency": 0.001
+      }
+    }
+  },
+  "filter": {
+        "geo_distance": {
+          "distance": "10km", 
+          "location": { 
+            "lat":  52,
+            "lon": 4
+          }
+        }
+  }
+}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
+```
+
 
 ### Search for "Maasvlakte" within a geographic bounding box
 
@@ -129,7 +155,7 @@ curl -H "Content-Type: application/json" -X POST -d '{
       }
     }
   }
-}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search
+}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
 
 ### Search over both country and name
