@@ -1,5 +1,19 @@
 enipedia-search
 ===============
+  - [What?](#what)
+  - [Available Databases](#available-databases)
+  - [API Call Examples](#api-call-examples)
+    - [Text](#text)
+      - [Search for "Maasvlakte" using Common Terms Query](#search-for-maasvlakte-using-common-terms-query)
+      - [Search for "Maasvlakte" using Fuzzy Like This query](#search-for-maasvlakte-using-fuzzy-like-this-query)
+      - [Search over both country and name](#search-over-both-country-and-name)
+    - [Geographic Queries](#geographic-queries)
+      - [Search for anything within a geographic bounding box](#search-for-anything-within-a-geographic-bounding-box)
+      - [Search for "Maasvlakte" within a geographic bounding box](#search-for-maasvlakte-within-a-geographic-bounding-box)
+      - [Search for anything within 10 km of a specific geographic point](#search-for-anything-within-10-km-of-a-specific-geographic-point)
+      - [Search for anything within 10 km of a specific geographic point and sort results by distance](#search-for-anything-within-10-km-of-a-specific-geographic-point-and-sort-results-by-distance)
+      - [Find something mentioning coal within 10 km of a specific geographic point](#find-something-mentioning-coal-within-10-km-of-a-specific-geographic-point)
+
 
 ## What?
 This is the web page code that is used for http://enipedia.tudelft.nl/Elasticsearch.html.  The main motivation is that data for global power plants is not published using a standardized format.  Data that is relevant for a single plant may be distributed across multiple databases which do not (re)use standard identifiers.  The interface below has been created to help deal with this situation by allowing one to easily search across multiple databases that may contain relevant data.  
@@ -164,7 +178,7 @@ curl -H "Content-Type: application/json" -X POST -d '{
 }' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
 
-#### Search for anything within 10 km of a specific geographic point & sort results by distance
+#### Search for anything within 10 km of a specific geographic point and sort results by distance
 
 See documentation on [sorting by distance](https://www.elastic.co/guide/en/elasticsearch/guide/current/sorting-by-distance.html) and the note on [scoring by distance](https://www.elastic.co/guide/en/elasticsearch/guide/current/sorting-by-distance.html#scoring-by-distance) (i.e. taking additional features besides distance into account).
 
@@ -229,6 +243,5 @@ curl -H "Content-Type: application/json" -X POST -d '{
   }
 }' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
-
 
 
