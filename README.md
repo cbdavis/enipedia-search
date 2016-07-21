@@ -28,7 +28,9 @@ In the examples below, you'll see URLs such as `http://enipedia.tudelft.nl/searc
 
 ## API Call Examples
 
-### Search for "Maasvlakte" using Common Terms Query
+### Text
+
+#### Search for "Maasvlakte" using Common Terms Query
 ```
 curl -H "Content-Type: application/json" -X POST -d '{
   "from": 0,
@@ -44,7 +46,7 @@ curl -H "Content-Type: application/json" -X POST -d '{
 }' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
 
-### Search for "Maasvlakte" using Fuzzy Like This query
+#### Search for "Maasvlakte" using Fuzzy Like This query
 ```
 curl -H "Content-Type: application/json" -X POST -d '{
   "from": 0,
@@ -57,7 +59,37 @@ curl -H "Content-Type: application/json" -X POST -d '{
 }' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
 
-### Search for anything within a geographic bounding box
+#### Search over both country and name
+Search for the Fierza plant within Albania.  Use boost to make sure we prioritize matching Albania.  Numerous results will be returned for Albania and it's important to look at the score as it should highlight the one correct match above the others.
+```
+curl -XPOST 'http://enipedia.tudelft.nl/search/geo/_search?pretty=true' -d '
+{
+  "query": {
+    "bool": {
+      "should": [
+        {
+          "match": {
+            "Name": "Fierza"
+          }
+        }, 
+        {
+          "match": {
+            "Country": {
+              "query": "Albania",
+              "boost": 2
+            }
+          }
+        }
+      ]
+    }
+  }
+}'
+```
+
+### Geographic Queries
+Searches can be done within a bounding box, within a distance from a point, and within a [defined polygon](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-geo-polygon-query.html).
+
+#### Search for anything within a geographic bounding box
 
 ```
 curl -H "Content-Type: application/json" -X POST -d '{
@@ -81,8 +113,33 @@ curl -H "Content-Type: application/json" -X POST -d '{
   }
 }' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
+#### Search for "Maasvlakte" within a geographic bounding box
 
-### Search for anything within 10 km of a specific geographic point
+```
+curl -H "Content-Type: application/json" -X POST -d '{
+  "from": 0,
+  "size": "10",
+  "query": {
+    "common": {
+      "_all": {
+        "query": "Maasvlakte",
+        "cutoff_frequency": 0.001
+      }
+    }
+  },
+  "filter": {
+    "geo_bounding_box": {
+      "location": {
+        "top_left": "51.9746049736781,3.9879854492187405",
+        "bottom_right": "51.932286908856256,4.1253145507812405"
+      }
+    }
+  }
+}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
+```
+
+
+#### Search for anything within 10 km of a specific geographic point
 ```
 curl -H "Content-Type: application/json" -X POST -d '{
   "from": 0,
@@ -107,7 +164,7 @@ curl -H "Content-Type: application/json" -X POST -d '{
 }' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
 
-### Search for anything within 10 km of a specific geographic point & sort results by distance
+#### Search for anything within 10 km of a specific geographic point & sort results by distance
 
 See documentation on [sorting by distance](https://www.elastic.co/guide/en/elasticsearch/guide/current/sorting-by-distance.html) and the note on [scoring by distance](https://www.elastic.co/guide/en/elasticsearch/guide/current/sorting-by-distance.html#scoring-by-distance) (i.e. taking additional features besides distance into account).
 
@@ -148,7 +205,7 @@ curl -H "Content-Type: application/json" -X POST -d '{
 }' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
 ```
 
-### Find something mentioning coal within 10 km of a specific geographic point
+#### Find something mentioning coal within 10 km of a specific geographic point
 ```
 curl -H "Content-Type: application/json" -X POST -d '{
   "from": 0,
@@ -174,54 +231,4 @@ curl -H "Content-Type: application/json" -X POST -d '{
 ```
 
 
-### Search for "Maasvlakte" within a geographic bounding box
 
-```
-curl -H "Content-Type: application/json" -X POST -d '{
-  "from": 0,
-  "size": "10",
-  "query": {
-    "common": {
-      "_all": {
-        "query": "Maasvlakte",
-        "cutoff_frequency": 0.001
-      }
-    }
-  },
-  "filter": {
-    "geo_bounding_box": {
-      "location": {
-        "top_left": "51.9746049736781,3.9879854492187405",
-        "bottom_right": "51.932286908856256,4.1253145507812405"
-      }
-    }
-  }
-}' http://enipedia.tudelft.nl/search/geo,osm,wikipedia/_search?pretty=true
-```
-
-### Search over both country and name
-Search for the Fierza plant within Albania.  Use boost to make sure we prioritize matching Albania.  Numerous results will be returned for Albania and it's important to look at the score as it should highlight the one correct match above the others.
-```
-curl -XPOST 'http://enipedia.tudelft.nl/search/geo/_search?pretty=true' -d '
-{
-  "query": {
-    "bool": {
-      "should": [
-        {
-          "match": {
-            "Name": "Fierza"
-          }
-        }, 
-        {
-          "match": {
-            "Country": {
-              "query": "Albania",
-              "boost": 2
-            }
-          }
-        }
-      ]
-    }
-  }
-}'
-```
