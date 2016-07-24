@@ -22,8 +22,8 @@ if os.path.isfile(myfile):
         os.remove(myfile)
 
 # download latest file from Enipedia
-#url = urllib2.urlopen("http://enipedia.tudelft.nl/OpenStreetMap/PlanetPowerGenerators.zip")
-url = urllib2.urlopen("http://enipedia.tudelft.nl/OpenStreetMap/GermanyPowerGenerators.zip")
+url = urllib2.urlopen("http://enipedia.tudelft.nl/OpenStreetMap/PlanetPowerGenerators.zip")
+#url = urllib2.urlopen("http://enipedia.tudelft.nl/OpenStreetMap/GermanyPowerGenerators.zip")
 zipfile = ZipFile(StringIO(url.read()))
 
 #context = etree.iterparse(zipfile.open("PlanetPowerGenerators.osm"), events=('end',), tag=('node', 'way', 'relation'))
